@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/Celegamer/CLionProjects/SO/Shell/lista.h
+stdbool.h
+-
+string.h
+-
+stdlib.h
+-
+
+C:/Users/Celegamer/CLionProjects/SO/Shell/main.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+stdbool.h
+-
+unistd.h
+-
+time.h
+-
+lista.h
+C:/Users/Celegamer/CLionProjects/SO/Shell/lista.h
+
