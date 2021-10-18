@@ -430,7 +430,6 @@ void leeCarpeta(char *str){
 }
 
 
-
 int borrar(tList L){
 	if(strcmp(L->data,FIN_COMM)==0){
 		getpwd();
@@ -446,17 +445,26 @@ int borrar(tList L){
 }
 
 void rec(char *str){
+	struct stat structstat;
+	if(stat(str, &structstat) != 0)
+		rec(str);
+	if(LetraTF(structstat.st_mode) != 'd'){
+		if(remove(str) != 0)
+			perror(str);
+			return;
+	}
 	DIR *dirp;
 	struct dirent *e;
 	errno = 0;
 	if ((dirp = opendir(str)) == NULL) {
-			perror(str);
-			return;
+		perror(str);
+		return;
 	}
 	while((e = readdir(dirp)) != NULL){
 		if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
-			if(remove(str) != 0)
-				rec(str);
+		printf("I");
+			if(remove(e->d_name) != 0)
+				rec(e->d_name);
 		}
 	}
 }
@@ -467,10 +475,12 @@ int borrarrec(tList L){
 		return 0;
 	}else{
 		for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
-				if(errno == 39)
-					rec(p->data);
-				else
-					perror("Error");
+				if(remove(p->data) != 0){
+					if(errno == 39)
+						rec(p->data);
+					else
+						perror(p->data);
+				}
 			}
 		}
 	return 0;
