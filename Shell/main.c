@@ -413,6 +413,24 @@ int list_fich(tList L){
     }
     return 0;    
 }
+
+void leeCarpeta(char *str){
+	DIR *dirp;
+	struct dirent *e;
+	errno = 0;
+	if ((dirp = opendir(str)) == NULL) {
+			perror(str);
+			return;
+	}
+	while((e = readdir(dirp)) != NULL){
+		if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
+			//función
+		}
+	}
+}
+
+
+
 int borrar(tList L){
 	if(strcmp(L->data,FIN_COMM)==0){
 		getpwd();
