@@ -1,68 +1,44 @@
-/*Cosas que quedan por hacer
- *
- * ayuda[cmd}
- * pasar argumentos
- * Carpeta
- * Comprobar que se cumples las condiciones iniciales del bucle (son 5) del paper
- * */
-/*
- * Problemas que quedas por solucionar de esta implementacion
- * -Exact_arg
- *
- * Apreciaciones sobre cosas que vas a tener que cambiar
- * Tu propusiste dos comandos para dynamic_list.c
- * Savelist y transferlist. Quiero decir que modifiques esos archivos si ves que necesitas algo adicional
- * Psdt: Me acabo de acordar que necesitas un comando para printear la  lista y ten en cuenta que la printeamos
- * con una cabecera que no se guarda en el comando (documentación)
- *
- * Comandos a modificar por tu parte principalmente
- * obt_comm
- * search_comm
- * exact_comm
- * exact_arg(este no funciona)
- * */
+#include "func.h"
 
+int main(){
+    char aux[MAXTAML], comm[MAX_COMM];
+    tList hist,comando;
+    createEmptyList(&hist);
+    createEmptyList(&comando);
+    bool status=true;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <unistd.h>
-//#include <sys/utsname.h>
-#include <time.h>
-#include "lista.h"
-
-
-#define MAX_COMM 999
-#define MAX_AUX_COMM 20
-#define ERR_INT -1
-#define ERR_CHAR '$'
-#define FIN_COMM "-0"
-
-//Vamos a definir una estructura variable para almacenar un numero ilimitado de comandos
-
-
-void limpiar_string(char* string[]){
-	for(int i = 0; i < MAX_COMM && string['\0']; i++){
-		string[i] = '\0';
-	}
+	do {
+		obt_com(&comando);
+        inPrintList(comando,&aux);
+	    insertItem(aux,&hist);
+	    status=an_comm(comando, &hist);
+        deleteList(&comando);
+        createEmptyList(&comando);
+	    printf("\n");
+        deleteList(&comando);
+        limpiar_string(&aux,MAXTAML);
+	}while(status);
+    deleteList(&hist);
 }
 
-void obt_com(char *an_str, tList* comm) {
-    char c;
+void obt_com(tList* comm) {
+    char c, an_str[MAXTAML];
     bool status_comm=true;
     int i = 0;
-    limpiar_string(&an_str);
+
+    limpiar_string(&an_str,MAXTAML);
     printf("\n>>");
+
     do {
         c = getchar();
         if (i >= MAX_COMM || c == EOF || c == '\n') {
             status_comm = false;
+            insertItem(an_str, comm);
             an_str[i] = '\0';
         } else if(c == ' '){
-        	insertItem(an_str, comm);
-        	limpiar_string(&an_str);
-        	i = 0;
+            insertItem(an_str, comm);
+            limpiar_string(&an_str,i);
+            i = 0;
         }else{
             an_str[i] = c;
             i++;
@@ -71,66 +47,54 @@ void obt_com(char *an_str, tList* comm) {
     insertItem(FIN_COMM, comm);
 }
 
+bool an_comm(tList L, tList *historia){
+    char aux[MAXTAML], aux_infosis[14]="infosis";
+    strcpy(aux, L->data);
+    int a=1;
 
-int search_arg(char *an_str){
-    int i=0;
-    for(i=0;i<MAX_COMM && an_str[i]!=' ' && an_str[i]!='\0';i++);
-    if(i==0) return 0;
-    else if(i<MAX_COMM && i>0 && an_str[i+1]==' ')return i;
-    else return ERR_INT;
-}
-/*
-//Usar wordcounter para implementar esta función correctamente
-int search_next_arg(char *an_str, int f){
-    int i;
-    for(i=f;i<MAX_COMM && an_str[i]!=' ';i++);
-    if(i<MAX_COMM)return i;
-    else return ERR_INT;
-}
-void exact_comm(char *an_str,char *dev){
-    int i,cont;
-    for(i=0;i<MAX_COMM  && an_str[i]!='\0'&& an_str[i]!='\n';i++);
-    for(cont=0;cont<=i;cont++){
-        dev[cont]=an_str[cont];
+    //strcpy(aux, L->data);
+    if(strcmp(L->data,"pid")==0) a=pid(L->next->data);
+    if(strcmp(L->data,"autores")==0) a=autores(L->next->data);
+    if(strcmp(L->data,"fecha")==0) a=fecha(L->next->data);
+    if(strcmp(L->data,"infosis")==0) a=infosis();
+    if(strcmp(L->data,"hist")==0) a=historial(L->next->data,historia);
+    if(strcmp(L->data,"ayuda")==0) a=ayuda(L->next->data);
+    if(strcmp(L->data,"carpeta")==0) a=carpeta(L->next->data);
+    if(strcmp(L->data,"crear")==0) a= crear_x(L->next);
+    if(strcmp(L->data,"listfich")==0) a= list_fich(L);
+    if(strcmp(L->data,"borrar")==0) a= borrar(L->next->data);
+    if(strcmp(L->data,"borrarrec")==0) a=borrarrec(L->next->data);
+    
+    if(strcmp(L->data,"comando")==0){
+        tPosL p;
+        p=comando(L->next->data, *historia);
+        if(p==NULL){
+            printf("Número de comando inválido");
+            a=0;
+        }
+        else if(strcmp(L->next->data,"comando") != 0) an_comm(p, historia);
+        else{
+            a=0;
+            printf("Estás intentando reutilizar un \"comando\" lo cual puede romper el programa");
+        }
     }
-    dev[cont+1]='\n';
-}
-*/
-void exact_comm(char an_str[],char *dev){
-    int i,cont;
-    for(i=0;i<MAX_COMM  && an_str[i]!='\0'&& an_str[i]!='\n' && an_str[i]!=' ';i++);
-    for(cont=0;cont<=i;cont++){
-        dev[cont]=an_str[cont];
-    }
-    dev[cont+1]='\n';
-}
+    if (strcmp(aux, "fin")==0 || strcmp(aux, "salir")==0 || strcmp(aux, "bye")==0)
+        return false;
+    if(a!=0) printf("No se ha introducido ningún comando válido");
+    return true;
 
-/*char exact_arg(char *an_str,int i){
-    if(i==ERR_INT) return ERR_CHAR;
-    if(an_str[i]==' ') i++;
-    if(an_str[i]=='-') i++;
-    return an_str[i];
-}*/
-
-void getpwd(){
-        char aux[60];
-        getcwd(aux, MAX_COMM);
-        printf("%s\n",aux);
 }
 
 
 
-void autores(char *str){
-    /*int i; char aux;
-    i=search_arg(str);aux= exact_arg(str,i);
-    if (aux!='l'){
+int autores(char *str){
+
+    if (strcmp(str, FIN_COMM) == 0 ){
         printf("Rodrigo Dantes Gonzalez Mantuano");
         printf("David Álvarez Celemín");
-    }
-    if (aux!='n'){
         printf("r.d.gmantuano@udc.es");
         printf("david.alvarez.celemin@udc.es");
-    }*/
+    }
     if (strcmp(str, "-l") == 0){
         printf("Rodrigo Dantes Gonzalez Mantuano");
         printf("David Álvarez Celemín");
@@ -139,30 +103,26 @@ void autores(char *str){
         printf("r.d.gmantuano@udc.es");
         printf("david.alvarez.celemin@udc.es");
     }
+    return 0;
 }
-
 int fecha(char *str){
-    int i; char aux;
-    //i=search_arg(str);aux=exact_arg(str,i);
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    if(aux=='d')printf("%d-%02d-%02d \n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-    if(aux=='l')printf("%02d:%02d:%02d",tm.tm_hour, tm.tm_min, tm.tm_sec);
+    if(strcmp(str,"-d")==0)printf("%d-%02d-%02d \n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    else if(strcmp(str,"-l")==0)printf("%02d:%02d:%02d",tm.tm_hour, tm.tm_min, tm.tm_sec);
+    else if(strcmp(str,FIN_COMM)==0)printf("%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,tm.tm_hour, tm.tm_min, tm.tm_sec);
     return 0;
 }
-
 int infosis(){
-    /*struct utsname aux;
+    struct utsname aux;
     uname(&aux);
-    printf("%s",aux.sysname);*/
+    printf("%s",aux.sysname);
     return 0;
 }
-
 int pid(char *str){
     pid_t process_id;
     if(strcmp(str, "-p") == 0)
-        2+1;
-        //printf("Parent_PID Terminal: %d\n",getppid());
+        printf("Parent_PID Terminal: %d\n",getppid());
     else if(strcmp(str, FIN_COMM) == 0)
         printf("PID Terminal: %d\n",getpid());
     else
@@ -170,20 +130,64 @@ int pid(char *str){
     return 0;
 
 }
-void historial(char *str,tList *L){
+int historial(char *str,tList *L){
     int i;
-    /*char aux;
-    i=search_arg(str);aux=exact_arg(str,i);*/
     if(strcmp(str, FIN_COMM) == 0)
         print_list(*L, MAX_COMM);
     else if(strcmp(str, "-c") == 0)
-        deleteList(L,false);
-    else if(strcmp(str, "0")>=0 && strcmp(str, itoa(MAX_COMM, NULL, 10)) <= 0){
+        deleteList(L);
+    else if(strcmp(str, "0")>=0 && atoi(str)<=999){
         i=strtol(str, NULL, 10);
         print_list(*L, i);
     }
+    return 0;
+}
+int carpeta (char str[]){
+    if(chdir(str)!=0){
+        if(strcmp(str,FIN_COMM)==0)getpwd();
+        else printf("Directorio no válido\n");
+        return 0;
+    }
+    else{
+        printf("Movido a %s",str);
+        return 0;
+    }
+}
+int getpwd(){
+    char aux[60];
+    getcwd(aux, MAX_COMM);
+    printf("%s\n",aux);
+    return 0;
+}
+tPosL comando(char *str, tList L) {
+    tPosL p;
+    int a, i = 0;
+    a = atoi(str);
+    a--;
+    for (p = L; p != NULL && i < a; p = p->next) {
+        i++;
+    };
+
+    if (a <= i) {
+        printf("(*) %s\n", p->data);
+        return p;
+    }
+    else return NULL;
 }
 
+
+int ayuda(char *str){
+    if(strcmp(str,"pid")==0) ayuda_pid();
+    if(strcmp(str,"autores")==0) ayuda_autores();
+    if(strcmp(str,"fecha")==0) ayuda_fecha();
+    if(strcmp(str,"infosis")==0) ayuda_infosis();
+    if(strcmp(str,"hist")==0) ayuda_historial();
+    if(strcmp(str,"ayuda")==0) ayuda_ayuda();
+    if(strcmp(str,"carpeta")==0) ayuda_carpeta();
+    if(strcmp(str,"comando")==0) ayuda_comando();
+    if (strcmp(str, "fin")==0 || strcmp(str, "salir")==0 || strcmp(str, "bye")==0) ayuda_salir();
+    return 0;
+}
 void ayuda_comando(){
     printf("Reutiliza el comando del historial correspodiente al número intrducido");
 }
@@ -199,9 +203,6 @@ void ayuda_fecha(){
 void ayuda_infosis(){
     printf("Muestra la información del sistema operativo\n");
 }
-void ayuda_getpwd(){
-    printf("Muestra el directorio actual de ejecución de la shell");
-}
 void ayuda_historial(){
     printf("Muestra los comandos utilizados anteriormente\n\"-N\" Muestra solo los N primero elementos \n\"-c\"Resetea la tabla");
 }
@@ -215,132 +216,244 @@ void ayuda_salir(){
     printf("Saca al usuario de la shell");
 }
 
-void ayuda(char *str){
-    /*int i; char aux;
-    i=search_arg(str);aux=exact_arg(str,i);
-    if(strcmp(aux,"pid")==0) ayuda_pid();
-    if(strcmp(aux,"autores")==0) ayuda_autores;
-    if(strcmp(aux,"fecha")==0) ayuda_fecha();
-    if(strcmp(aux,"infosis")==0) ayuda_infosis();
-    if(strcmp(aux,"getpwd")==0) ayuda_getpwd();
-    if(strcmp(aux,"hist")==0) ayuda_historial;
-    if(strcmp(aux,"ayuda")==0) ayuda_ayuda();
-    if(strcmp(aux,"carpeta")==0) ayuda_carpeta();
-    if (strcmp(aux, "fin")==0 || strcmp(aux, "salir")==0 || strcmp(aux, "bye")==0) ayuda_salir;*/
-    if(strcmp(str,"pid")==0) ayuda_pid();
-    if(strcmp(str,"autores")==0) ayuda_autores;
-    if(strcmp(str,"fecha")==0) ayuda_fecha();
-    if(strcmp(str,"infosis")==0) ayuda_infosis();
-    if(strcmp(str,"getpwd")==0) ayuda_getpwd();
-    if(strcmp(str,"hist")==0) ayuda_historial;
-    if(strcmp(str,"ayuda")==0) ayuda_ayuda();
-    if(strcmp(str,"carpeta")==0) ayuda_carpeta();
-    if (strcmp(str, "fin")==0 || strcmp(str, "salir")==0 || strcmp(str, "bye")==0) ayuda_salir;
+
+
+void limpiar_string(char* string, int c){
+    for(int i = 0; i < c && string[i]!='/0'; i++){
+        string[i] = '\0';
+    }
+
 }
 
 
-tPosL comando(char *str, tList L){
-    tPosL p;
-    p=findItem(str, L);
-    printf("(*) %s",p->data);
-    return p;
+char LetraTF (mode_t m)
+{
+    switch (m&S_IFMT) { /*and bit a bit con los bits de formato,0170000 */
+        case S_IFSOCK: return 's'; /*socket */
+        case S_IFLNK: return 'l'; /*symbolic link*/
+        case S_IFREG: return '-'; /* fichero normal*/
+        case S_IFBLK: return 'b'; /*block device*/
+        case S_IFDIR: return 'd'; /*directorio */
+        case S_IFCHR: return 'c'; /*char device*/
+        case S_IFIFO: return 'p'; /*pipe*/
+        default: return '?'; /*desconocido, no deberia aparecer*/
+    }
 }
 
-bool an_comm(tList L, tList *historial){
-    char *aux;
-    strcpy(aux, L->data);
-    tPosL p;
+char * ConvierteModo (mode_t m, char *permisos)
+{
+    strcpy (permisos,"---------- ");
+    permisos[0]=LetraTF(m);
+    if (m&S_IRUSR) permisos[1]='r'; /*propietario*/
+    if (m&S_IWUSR) permisos[2]='w';
+    if (m&S_IXUSR) permisos[3]='x';
+    if (m&S_IRGRP) permisos[4]='r'; /*grupo*/
+    if (m&S_IWGRP) permisos[5]='w';
+    if (m&S_IXGRP) permisos[6]='x';
+    if (m&S_IROTH) permisos[7]='r'; /*resto*/
+    if (m&S_IWOTH) permisos[8]='w';
+    if (m&S_IXOTH) permisos[9]='x';
+    if (m&S_ISUID) permisos[3]='s'; /*setuid, setgid y stickybit*/
+    if (m&S_ISGID) permisos[6]='s';
+    if (m&S_ISVTX) permisos[9]='t';
+    return permisos;
+}
 
-//    tList X=*L;
-    //exact_comm(echo,aux[0]);
-    strcpy(aux, L->data);
-    if(strcmp(aux,"pid")==0) pid(L->next->data);
-    if(strcmp(aux,"autores")==0) autores(L->next->data);
-    if(strcmp(aux,"fecha")==0) fecha(L->next->data);
-    if(strcmp(aux,"infosis")==0) infosis();
-    if(strcmp(aux,"getpwd")==0) getpwd();
-    //if(strcmp(aux,"hist")==0) historial(L->next->data, historial);
-    if(strcmp(aux,"ayuda")==0) ayuda(L->next->data);
-    if(strcmp(aux,"comando")==0){
-        char aux2;
-        p=comando(L->next->data, *historial);
-        exact_comm(p->data,&aux2);
-        if(strcmp(L->next->data,"comando") != 0)
-            return an_comm(L->next, L);
+int crear_x(tList L){
+    FILE *fp;
+    if (strcmp(L->data,"-f")==0){
+        if((fp=fopen(L->next->data,"r"))!=NULL) {
+            printf("Cannot create that file, already exists");
+            fclose(fp);
+        }
+            //Posible perdida de puntero
         else{
-            printf("Estás intentando reutilizar un \"comando\" lo cual puede romper el programa");
+            //fclose(fp);
+            if((fp=fopen(L->next->data,"w"))==NULL){
+                printf("Cannot create that file");
+            }
+            else fclose(fp);
         }
     }
-    if (strcmp(aux, "fin")==0 || strcmp(aux, "salir")==0 || strcmp(aux, "bye")==0)
-        return false;
-    insertItem(inPrintList(L), historial);
-    return true;
-
-}
-
-//Todo finalizado hasta aquí
-
-/*
-int carpeta (char *PATH){
-    if(PATH exists)return chdir(PATH);
-    else if(getpwd(&PATH)) chdir(PATH);
     else{
-        printf("Unexpeted error, Path not found pr dissappeared");
-        return 5;
+        if (mkdir(L->data, 0777) == -1){
+            printf("Error al crear el directiorio");
+        }
+        else
+            printf("Directory created %s",L->data);
     }
-}
-*/
-
-
-//Devuelve el tamaño de la string en palabras
-int TrocearCadena(char * cadena, char ** trozos){
-    int i=1;
-    if ((trozos[0]=strtok(cadena," \n\t"))==NULL) return 0;
-    while ((trozos[i]=strtok(NULL," \n\t"))!=NULL) i++;
-    return i;
+    return 0;
 }
 
 
+void printFileProperties(struct stat stats, char comm[]){
+    struct tm dt;
+    if(strcmp(FIN_COMM,comm)==0){
+        printf("\nFile size: %ld", stats.st_size);
+        return;
+    }
 
-int main(){
-    char c, comm[MAX_COMM];
-    tList hist,comando;
-    createEmptyList(&hist);
-    createEmptyList(&comando);
+    if(strcmp(comm,"-acc")==0){
+        // File modification time
+        dt = *(gmtime(&stats.st_mtime));
+        printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+               dt.tm_hour, dt.tm_min, dt.tm_sec);
+    }
+    // Get file creation time in seconds and
+    // convert seconds to date and time format
+    if(strcmp(comm,"-long")==0){
+        dt = *(gmtime(&stats.st_ctime));
+        printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+               dt.tm_hour, dt.tm_min, dt.tm_sec);
+    }
 
-    char** troceado;
-    int word_counter;
-    bool status=true;
 
 
-    char echo[MAX_COMM], *cwd= malloc(MAX_COMM* sizeof(char));
-	do {
-		obt_com(&echo[0], &comando);
-//	    strcpy(echo,"pid -p");
-	    insertItem(echo,&hist);
-	    status=an_comm(comando, &hist);
-        deleteList(&comando, false);
-	    /*Al pasar el comando anterior se cambia el valor de lastItem->next de (0x00) a (0xa00) produciendo errores*/
-	    printf("\n");
-	}while(status);
-    deleteList(&hist, true);
+
+
+
+
+
+
+
+
+
+
+
+
+        else if(strcmp(comm,"-link")==0){
+
+//      Solucion copiada
+//        long symlink_max;
+//        size_t bufsize;
+//        char *buf;
+//        ssize_t len;
+//
+//        errno = 0;
+//        symlink_max = pathconf("/usr/bin/", _PC_SYMLINK_MAX);
+//        if (symlink_max == -1) {
+//            if (errno != 0) {
+//                /* handle error condition */
+//            }
+//            bufsize = 10000;
+//        }
+//        else {
+//            bufsize = symlink_max+1;
+//        }
+//
+//        buf = (char *)malloc(bufsize);
+//        if (buf == NULL) {
+//            /* handle error condition */
+//        }
+//
+//        len = readlink("/usr/bin/perl", buf, bufsize);
+//        buf[len] = '\0';*/
+            char linkname[MAX_MID];
+            char cwd[MAX_MID];
+
+
+            if(getcwd(cwd,sizeof(cwd))!=NULL){
+                ssize_t r = readlink(cwd, linkname, MAX_MID);
+
+                if (r != -1) {
+                    linkname[r] = '\0';
+                    printf(" -> %s\n", linkname);
+                }
+                else
+                    putchar('\n');
+            }
+
+        }
+
+
+
+
+
+        printf("\nFile access: ");
+        if (stats.st_mode & R_OK)
+            printf("read ");
+        if (stats.st_mode & W_OK)
+            printf("write ");
+        if (stats.st_mode & X_OK)
+            printf("execute");
+
+        // File size
+        printf("\nFile size: %ld", stats.st_size);
 
     }
 
-//La funcion devuelve el directorio actual de ejecucion del terminal
-    /*
-            getpwd(cwd);
-            printf("\n%s>> ", cwd);
-            fgets(echo, 59, stdin);
-            troceado = malloc(100 * sizeof(char *));
-            word_counter = TrocearCadena(echo, troceado);
-             */
 
-/*       switch (echo) {
-           case "exit":
-               return 0;
-           break;
-           case "autores":
-               autores(al[0]);
-       }
-*/
+int list_fich(tList L){
+    tPosL p;
+    char aux[MAX_AUX_COMM]=FIN_COMM;
+    struct stat structstat;
+    //check optional parameters for the function
+    if(strcmp(L->data,FIN_COMM)==0) {
+        carpeta(L->data);
+        return 0;
+    }
+
+    if(L->data[0]=='-')strcpy(aux,L->data);
+
+    if(L->next->data[0]=='-') return 0;
+
+
+
+    for ( p=L;  p!=NULL && strcmp(p->data,FIN_COMM)!=0 ; p=p->next ) {
+        if(access(p->data, F_OK) == 0) {
+            if(stat(p->data, &structstat)){
+                printf("%s",p->data);
+                printFileProperties(structstat,aux);
+            }
+        } else {
+            // file doesn't exist
+            // Q_P What we do if wrong option?
+        }
+        printf("\n");
+    }
+    return 0;    
+}
+int borrar(tList L){
+	if(strcmp(L->data,FIN_COMM)==0){
+		getpwd();
+		return 0;
+	}else{
+		for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
+			if(remove(p->data) != 0){
+				perror(p->data);
+			}
+		}
+		return 0;
+	}
+}
+
+void rec(char *str){
+	DIR *dirp;
+	struct dirent *e;
+	errno = 0;
+	if ((dirp = opendir(str)) == NULL) {
+			perror(str);
+			return;
+	}
+	while((e = readdir(dirp)) != NULL){
+		if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
+			if(remove(str) != 0)
+				rec(str);
+		}
+	}
+}
+
+int borrarrec(tList L){
+	if(strcmp(L->data,FIN_COMM)==0){
+		getpwd();
+		return 0;
+	}else{
+		for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
+				if(errno == 39)
+					rec(p->data);
+				else
+					perror("Error");
+			}
+		}
+	return 0;
+}
