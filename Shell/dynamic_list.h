@@ -27,6 +27,7 @@ bool insertItem(char d[], tList* L);                //Se posiciona el item en el
 bool copyList(tList L, tList* M);                   //Pasa una copia de la lista copiada y la dirección de la lista a copiar.
 void updateItem(char d[] , tPosL p, tList* L);      //Modifica el contenido del elemento situado en la posición indicada.
 void deleteAtPosition(tPosL p, tList* L);           //Libera la memoria que ocupa una posición de la lista.
+int count_node(tList L);
 void deleteList(tList* L);                          //Libera la memoria que ocupa la lista.
 tPosL findItem(char d[], tList L);               //Devuelve la posición del primer elemento de la lista cuyo nick de usuario
 // se corresponda con el indicado (o LNULL si no existe tal elemento).
