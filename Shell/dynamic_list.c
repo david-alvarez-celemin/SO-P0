@@ -12,6 +12,13 @@ void createEmptyList (tList* L){
     *L=LNULL;
 }
 
+int count_node(tList L){
+    tPosL p;
+    int i=0;
+    for(p=L;p!=NULL;p=p->next)i++;
+    return i;
+}
+
 
 /*En la declaración del nodo, se utiliza un puntero al cual le asignamos el espacio de memoria del struct y devuelve
 un puntero no nulo.*/
@@ -109,9 +116,6 @@ tPosL previous(tPosL p, tList L){
     }
 }
 
-
-
-
 /*Libera la memoria que ocupa la lista si no está vacía*/
 void deleteList(tList* L){
     tPosL p;
@@ -132,21 +136,6 @@ void print_list(tList L,int i){
     for(aux=L;aux!=LNULL && a<i;aux=aux->next){
         a++;
         printf("%d-> %s\n",a, aux->data);
-
-    }
-}
-/*
-bool copyList(tList L, tList *M){
-    tPosL p
-    for(p=M;p!=NULL;p=p.next){
-        if
-    }
-}
-*/
-void print_lista(tList L){
-    tPosL aux;
-    for(aux=L;aux!=LNULL;aux=aux->next){
-        printf("%s\n",aux->data);
     }
 }
 
@@ -155,25 +144,8 @@ void inPrintList(tList L,char c[MAXTAML]){
     char auxc[MAXTAML];
     tPosL aux;
     strcpy(c,L->data);
-    for(aux=L->next;aux!=LNULL && strcmp(aux->data,"-0")!=0;aux=aux->next){
-        for(;i<MAXTAML && c[i]!='\0';i++);
-        c[i]=' ';
-        strcpy(auxc,aux->data);
-        strcat(c,auxc );
+    for(aux=L->next;aux!=LNULL && (strcmp(aux->data,"-0")!=0 /*|| strcmp(aux->data,"")!=0*/);aux=aux->next){
+        strcat(c," ");
+        strcat(c,aux->data);
     }
-}
-
-void multitouni(tList *L){
-    tList M;
-
-    tPosL aux;
-    deleteList(L);
-    createEmptyList(L);
-    insertItem(M->data,L);
-    for(aux=M->next;aux!=LNULL;aux=aux->next){
-        strcat((*L)->data, aux->data);
-        strcat((*L)->data," ");
-    }
-
-
 }
