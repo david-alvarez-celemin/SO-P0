@@ -1,11 +1,5 @@
 #include "func.h"
 
-/*
- * problemas graves
- * -no imprime el numero de link (l 354);
- *
- * */
-
 int main(){
     char aux[MAXTAML];
     tList hist, comando;
