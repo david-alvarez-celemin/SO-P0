@@ -10,18 +10,16 @@ int main(){
     char aux[MAXTAML];
     tList hist, comando;
     createEmptyList(&hist);
-    createEmptyList(&comando);
     bool status=true;
 
     do {
+        createEmptyList(&comando);
         obt_com(&comando);
         inPrintList(comando,aux);
         insertItem(aux,&hist);
-        status=an_comm(comando, &hist);
+        status=an_comm(comando, &hist,true);
         deleteList(&comando);
-        createEmptyList(&comando);
         printf("\n");
-        deleteList(&comando);
         limpiar_string(aux,MAXTAML);
     }while(status);
     deleteList(&hist);
@@ -37,12 +35,13 @@ void str_to_cmm(char *str, tList* comm) {
             insertItem(an_str, comm);
             limpiar_string(an_str,i);
             aux = 0;
-        }else{
+        }else if ((c>=65 && c<=90) || (c>=97 && c<=122) || c==45){
             an_str[aux] = c;
             aux++;
         }
     }
-    insertItem(FIN_COMM, comm);
+    insertItem(an_str, comm);
+    insertItem(FIN_COMM,comm);
 }
 
 void obt_com(tList* comm) {
@@ -72,18 +71,62 @@ void obt_com(tList* comm) {
     insertItem(FIN_COMM, comm);
 }
 
-bool an_comm(tList L, tList *historia){
+bool an_comm(tList L, tList *historia, bool check){
     int a=1;
     tList temp;
     createEmptyList(&temp);
-    if(strcmp(L->data,"pid")==0) a=pid(L->next->data);
-    if(strcmp(L->data,"autores")==0) a=autores(L->next->data);
-    if(strcmp(L->data,"fecha")==0) a=fecha(L->next->data);
-    if(strcmp(L->data,"infosis")==0) a=infosis();
-    if(strcmp(L->data,"hist")==0) a= historial(L->next->data,historia);
-    if(strcmp(L->data,"ayuda")==0) a=ayuda(L->next->data);
-    if(strcmp(L->data,"carpeta")==0) a=carpeta(L->next->data);
-    if(strcmp(L->data,"crear")==0) a= crear(&L->next);
+    if(strcmp(L->data,"pid")==0) {
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else a=pid(L->next->data);
+    }
+    if(strcmp(L->data,"autores")==0) {
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else a=autores(L->next->data);
+
+    }
+    if(strcmp(L->data,"fecha")==0){
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else a=fecha(L->next->data);
+    }
+    if(strcmp(L->data,"infosis")==0) {
+        if(count_node(L->next)>1){
+            check=false;
+            a=2;
+        }
+        else a=infosis();
+    }
+    if(strcmp(L->data,"hist")==0) {
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else a= historial(L->next->data,historia);
+    }
+    if(strcmp(L->data,"ayuda")==0) {
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else
+        a=ayuda(L->next->data);
+    }
+    if(strcmp(L->data,"carpeta")==0) {
+        if(count_node(L->next)>2){
+            check=false;
+            a=2;
+        }
+        else a=carpeta(L->next->data);
+    }
+    if(strcmp(L->data,"crear")==0) a= crear(L->next);
     if(strcmp(L->data,"listfich")==0) a= list_fich(L->next,&temp);
     if(strcmp(L->data,"listdir")==0) a= list_dir_up(L->next, &temp);
     if(strcmp(L->data,"borrar")==0) a= borrar(L->next);
@@ -92,29 +135,32 @@ bool an_comm(tList L, tList *historia){
     if(strcmp(L->data,"comando")==0) {
         tPosL p;
         p = comando(L->next->data, *historia);
-        printf("Error");
+        //printf("Error");
         if (p == NULL) {
             printf("Número de comando inválido");
             a = 0;
         } else {
             tList aux;
             createEmptyList(&aux);
-            char *pre_comm = NULL;
-            strcpy(pre_comm, p->data);
-            str_to_cmm(pre_comm, &aux);
+            //char *pre_comm = NULL;
+            //strcpy(pre_comm, p->data);
+            str_to_cmm(p->data, &aux);
             if (strcmp(aux->data, "comando") != 0) {
                 printf("%s\n", aux->data);
-                sleep(10);
-                an_comm(aux, historia);
+                sleep(1);
+                an_comm(aux, historia, false);
             } else {
                 a = 0;
-                printf("Estás intentando reutilizar un \"comando\" lo cual puede romper el programa");
+                printf("Estás intentando utilizar un \"comando\" que puede romper el programa");
             }
+            deleteList(&aux);
         }
     }
+    deleteList(&temp);
     if (strcmp(L->data, "fin")==0 || strcmp(L->data, "salir")==0 || strcmp(L->data, "bye")==0)
         return false;
-    if(a!=0) printf("No se ha introducido ningún comando válido");
+    if(a==2 && !check) printf("Parámetros introducidos incorrectos");
+    if(a==1 && !check) printf("No se ha introducido ningún comando válido");
     return true;
 
 }
@@ -173,6 +219,7 @@ int historial(char *str,tList *L){
         i=strtol(str, NULL, 10);
         print_list(*L, i);
     }
+    else return 1;
     return 0;
 }
 int carpeta (char str[]){
@@ -293,14 +340,15 @@ char * ConvierteModo (mode_t m, char *permisos)
     return permisos;
 }
 
-int crear(tList *L){
+int crear(tList L){
     tList p;
-    bool a;
-    if(strcmp((*L)->data,"-f")==0) 
-    	a=true;
-    for(p=(*L)->next; strcmp(p->data,FIN_COMM)!=0;p=p->next){
-        crear_x(p,a);
-    }
+    bool a = false;
+	if(strcmp(L->data,"-f")==0){
+		a = true;
+		L = L-> next;
+	}
+	for(p=L; strcmp(p->data,FIN_COMM)!=0;p=p->next)
+        crear_x(p, a);
     return 0;
 }
 
@@ -319,14 +367,10 @@ int crear_x(tList L, bool a){
             }
             else fclose(fp);
         }
-    }
-    else{
-        if (mkdir(L->data, 0777) == -1){
+    }else if (mkdir(L->data, 0777) == -1)
             printf("Error al crear el directiorio");
-        }
         else
             printf("Directory created %s",L->data);
-    }
     return 0;
 }
 
@@ -375,48 +419,50 @@ void sym_link (struct stat stats){
 
 }
 
-void printFileProperties(struct stat stats, tList *temp,char* name, char *carpeta){
+void printFileProperties(struct stat stats, tList *temp,char* name){
     struct tm dt;
     /*if(strcmp(FIN_COMM,comm)==0){
         printf("\nFile size: %ld", stats.st_size);
         return;
     }*/
-    if(findItem(FIN_COMM,*temp)==NULL/*|| findItem("-long",temp)==NULL && findItem("-link",temp)!=NULL*/){
-        if(findItem("-acc",*temp)!=NULL){
-            // File modification time
-            dt = *(gmtime(&stats.st_mtime));
-            printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
-                   dt.tm_hour, dt.tm_min, dt.tm_sec);
-        } else{
-            dt = *(gmtime(&stats.st_ctime));
-            printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
-                   dt.tm_hour, dt.tm_min, dt.tm_sec);
+    if(!(name[0] == '.' && findItem("-hid",*temp)==NULL)){
+		if(findItem(FIN_COMM,*temp)==NULL/*|| findItem("-long",temp)==NULL && findItem("-link",temp)!=NULL*/){
+		    if(findItem("-acc",*temp)!=NULL){
+		        // File modification time
+		        dt = *(gmtime(&stats.st_mtime));
+		        printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+		               dt.tm_hour, dt.tm_min, dt.tm_sec);
+		    } else{
+		        dt = *(gmtime(&stats.st_ctime));
+		        printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+		               dt.tm_hour, dt.tm_min, dt.tm_sec);
 
-        }
-        // Get file creation time in seconds and
-        // convert seconds to date and time format
-        if(findItem("-long",*temp)){
+		    }
+		    // Get file creation time in seconds and
+		    // convert seconds to date and time format
+		    if(findItem("-long",*temp)){
 
-            printf("%lu\t%ld\t",stats.st_nlink,stats.st_ino);
+		        printf("%lu\t%ld\t",stats.st_nlink,stats.st_ino);
 
-            if (stats.st_mode &  S_IRUSR)
-                printf("r ");
-            if (stats.st_mode & S_IWUSR)
-                printf("w ");
-            if (stats.st_mode & S_IXUSR)
-                printf("x");
-            printf("\t");
+		        if (stats.st_mode &  S_IRUSR)
+		            printf("r ");
+		        if (stats.st_mode & S_IWUSR)
+		            printf("w ");
+		        if (stats.st_mode & S_IXUSR)
+		            printf("x");
+		        printf("\t");
 
-        }
-        if(findItem("-link",*temp)!=NULL) sym_link(stats);
+		    }
+		    if(findItem("-link",*temp)!=NULL) sym_link(stats);
 
-    }
+		}
 
 
-    // File size
-    printf("%ld\t", stats.st_size);
-    printf("%s\t",name);
-    printf("\n");
+		// File size
+		printf("%ld\t", stats.st_size);
+		printf("%s\t",name);
+		printf("\n");
+	}
 }
 
 void get_parameters(tList *L, tList M){
@@ -426,7 +472,7 @@ void get_parameters(tList *L, tList M){
     }
 }
 
-void an_list(tList* L,tList *temp,void (*function)(struct stat stats, tList *temp, char* name, char *carpeta)) {
+void an_list(tList* L,tList *temp,void (*function)(struct stat stats, tList *temp, char* name)) {
     tList p;
     struct stat structstat;
     get_parameters(temp, *L);
@@ -434,7 +480,7 @@ void an_list(tList* L,tList *temp,void (*function)(struct stat stats, tList *tem
     else p = findItem(last(*temp)->data, *L)->next;
     for (; p != NULL && strcmp(p->data, FIN_COMM) != 0; p = p->next) {
         if (stat(p->data, &structstat) == 0) {
-            (*function)(structstat, temp, p->data, p->data);
+            (*function)(structstat, temp, p->data);
         }
     }
     deleteList(temp);
@@ -463,46 +509,31 @@ int list_dir_up(tList L, tList *temp){
     return 0;
 }
 
-void list_dir_bottom(struct stat structstat, tList *temp,char* name, char* carpeta){
+void list_dir_bottom(struct stat structstat, tList *temp,char* name){
     struct dirent *de;
     DIR *dr = NULL;
     bool a=(S_ISDIR(structstat.st_mode)), b=(strcmp(name,".")!=0 && strcmp(name,"..")!=0);
     struct stat sub_structstat;
-
-    //cambia el directorio actual para poder acceder a los archivos
-    /*if(strcmp(getcwd(name,MAXTAML),carpeta)!=0){
-        if(chdir(carpeta)!=0) {
-            strcat(carpeta,"/");
-            return;
-        }
-    }*/
+    char source[MAX_COMM];
+    getcwd(source, MAX_COMM);
     //Si no es un directorio, imprime la información del archivo
-    if(!a&&b) printFileProperties(structstat,temp, name, name) ;
+    if(!a)
+        printFileProperties(structstat,temp, name) ;
         //si es un directorio lo abre y recorre
     else if (a&&b){
+    	printf("\n%s->\n", name);
         if ((dr = opendir(name)) == NULL) {
             perror(name);
             return;
         }
+        chdir(name);
         while ((de=readdir(dr))!=NULL){
-
-            if((a=(strcmp(de->d_name,".")!=0 && strcmp(de->d_name,"..")!=0)) && (b=stat(de->d_name,&sub_structstat)==0)){
-                //problema aquí
-                if(S_ISDIR(sub_structstat.st_mode))
-                    list_dir_bottom(sub_structstat,temp,de->d_name, carpeta/*strcat(carpeta,de->d_name)*/);
-                //else printFileProperties(sub_structstat,temp,)
-            }
-            else if(!a);
-            else  perror(de->d_name);
-
+            stat(de->d_name, &sub_structstat);
+            list_dir_bottom(sub_structstat, temp, de->d_name);
         }
         closedir(dr);
-
+        chdir(source);
     }
-
-
-
-
 }
 
 void leeCarpeta(char *str){
