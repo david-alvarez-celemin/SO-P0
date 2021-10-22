@@ -1,24 +1,48 @@
 #include "func.h"
 
+/*
+ * problemas graves
+ * -no imprime el numero de link (l 354);
+ *
+ * */
+
 int main(){
-    char aux[MAXTAML], comm[MAX_COMM];
-    tList hist,comando;
+    char aux[MAXTAML];
+    tList hist, comando;
     createEmptyList(&hist);
     createEmptyList(&comando);
     bool status=true;
 
-	do {
-		obt_com(&comando);
-        inPrintList(comando,&aux);
-	    insertItem(aux,&hist);
-	    status=an_comm(comando, &hist);
+    do {
+        obt_com(&comando);
+        inPrintList(comando,aux);
+        insertItem(aux,&hist);
+        status=an_comm(comando, &hist);
         deleteList(&comando);
         createEmptyList(&comando);
-	    printf("\n");
+        printf("\n");
         deleteList(&comando);
-        limpiar_string(&aux,MAXTAML);
-	}while(status);
+        limpiar_string(aux,MAXTAML);
+    }while(status);
     deleteList(&hist);
+}
+
+void str_to_cmm(char *str, tList* comm) {
+    char c, an_str[MAXTAML];
+    int aux = 0;
+    for(int i = 0; str[i]!='\0'; i++){
+        c = str[i];
+        if(c == ' '){
+        	an_str[aux] = '\0';
+            insertItem(an_str, comm);
+            limpiar_string(an_str,i);
+            aux = 0;
+        }else{
+            an_str[aux] = c;
+            aux++;
+        }
+    }
+    insertItem(FIN_COMM, comm);
 }
 
 void obt_com(tList* comm) {
@@ -26,18 +50,19 @@ void obt_com(tList* comm) {
     bool status_comm=true;
     int i = 0;
 
-    limpiar_string(&an_str,MAXTAML);
+    limpiar_string(an_str,MAXTAML);
     printf("\n>>");
 
     do {
         c = getchar();
         if (i >= MAX_COMM || c == EOF || c == '\n') {
             status_comm = false;
-            insertItem(an_str, comm);
             an_str[i] = '\0';
-        } else if(c == ' '){
             insertItem(an_str, comm);
-            limpiar_string(&an_str,i);
+        } else if(c == ' '){
+        	an_str[i] = '\0';
+            insertItem(an_str, comm);
+            limpiar_string(an_str,i);
             i = 0;
         }else{
             an_str[i] = c;
@@ -48,37 +73,46 @@ void obt_com(tList* comm) {
 }
 
 bool an_comm(tList L, tList *historia){
-    char aux[MAXTAML], aux_infosis[14]="infosis";
-    strcpy(aux, L->data);
     int a=1;
-
-    //strcpy(aux, L->data);
+    tList temp;
+    createEmptyList(&temp);
     if(strcmp(L->data,"pid")==0) a=pid(L->next->data);
     if(strcmp(L->data,"autores")==0) a=autores(L->next->data);
     if(strcmp(L->data,"fecha")==0) a=fecha(L->next->data);
     if(strcmp(L->data,"infosis")==0) a=infosis();
-    if(strcmp(L->data,"hist")==0) a=historial(L->next->data,historia);
+    if(strcmp(L->data,"hist")==0) a= historial(L->next->data,historia);
     if(strcmp(L->data,"ayuda")==0) a=ayuda(L->next->data);
     if(strcmp(L->data,"carpeta")==0) a=carpeta(L->next->data);
-    if(strcmp(L->data,"crear")==0) a= crear_x(L->next);
-    if(strcmp(L->data,"listfich")==0) a= list_fich(L);
-    if(strcmp(L->data,"borrar")==0) a= borrar(L->next->data);
-    if(strcmp(L->data,"borrarrec")==0) a=borrarrec(L->next->data);
-    
-    if(strcmp(L->data,"comando")==0){
+    if(strcmp(L->data,"crear")==0) a= crear(&L->next);
+    if(strcmp(L->data,"listfich")==0) a= list_fich(L->next,&temp);
+    if(strcmp(L->data,"listdir")==0) a= list_dir_up(L->next, &temp);
+    if(strcmp(L->data,"borrar")==0) a= borrar(L->next);
+    if(strcmp(L->data,"borrarrec")==0) a= borrarrec(L->next);
+
+    if(strcmp(L->data,"comando")==0) {
         tPosL p;
-        p=comando(L->next->data, *historia);
-        if(p==NULL){
+        p = comando(L->next->data, *historia);
+        printf("Error");
+        if (p == NULL) {
             printf("Número de comando inválido");
-            a=0;
-        }
-        else if(strcmp(L->next->data,"comando") != 0) an_comm(p, historia);
-        else{
-            a=0;
-            printf("Estás intentando reutilizar un \"comando\" lo cual puede romper el programa");
+            a = 0;
+        } else {
+            tList aux;
+            createEmptyList(&aux);
+            char *pre_comm = NULL;
+            strcpy(pre_comm, p->data);
+            str_to_cmm(pre_comm, &aux);
+            if (strcmp(aux->data, "comando") != 0) {
+                printf("%s\n", aux->data);
+                sleep(10);
+                an_comm(aux, historia);
+            } else {
+                a = 0;
+                printf("Estás intentando reutilizar un \"comando\" lo cual puede romper el programa");
+            }
         }
     }
-    if (strcmp(aux, "fin")==0 || strcmp(aux, "salir")==0 || strcmp(aux, "bye")==0)
+    if (strcmp(L->data, "fin")==0 || strcmp(L->data, "salir")==0 || strcmp(L->data, "bye")==0)
         return false;
     if(a!=0) printf("No se ha introducido ningún comando válido");
     return true;
@@ -90,18 +124,18 @@ bool an_comm(tList L, tList *historia){
 int autores(char *str){
 
     if (strcmp(str, FIN_COMM) == 0 ){
-        printf("Rodrigo Dantes Gonzalez Mantuano");
-        printf("David Álvarez Celemín");
-        printf("r.d.gmantuano@udc.es");
-        printf("david.alvarez.celemin@udc.es");
+        printf("Rodrigo Dantes Gonzalez Mantuano\t");
+        printf("David Álvarez Celemín\n");
+        printf("r.d.gmantuano@udc.es\t\t\t");
+        printf("david.alvarez.celemin@udc.es\n");
     }
     if (strcmp(str, "-l") == 0){
-        printf("Rodrigo Dantes Gonzalez Mantuano");
-        printf("David Álvarez Celemín");
+        printf("Rodrigo Dantes Gonzalez Mantuano\t");
+        printf("David Álvarez Celemín\n");
     }
     if (strcmp(str, "-n") == 0) {
-        printf("r.d.gmantuano@udc.es");
-        printf("david.alvarez.celemin@udc.es");
+        printf("r.d.gmantuano@udc.es\t");
+        printf("david.alvarez.celemin@udc.es\n");
     }
     return 0;
 }
@@ -120,7 +154,6 @@ int infosis(){
     return 0;
 }
 int pid(char *str){
-    pid_t process_id;
     if(strcmp(str, "-p") == 0)
         printf("Parent_PID Terminal: %d\n",getppid());
     else if(strcmp(str, FIN_COMM) == 0)
@@ -143,15 +176,16 @@ int historial(char *str,tList *L){
     return 0;
 }
 int carpeta (char str[]){
-    if(chdir(str)!=0){
-        if(strcmp(str,FIN_COMM)==0)getpwd();
-        else printf("Directorio no válido\n");
+    if(strcmp(str,FIN_COMM)==0){
+        getpwd();
         return 0;
     }
-    else{
+    else if(chdir(str)==0){
         printf("Movido a %s",str);
-        return 0;
     }
+    else perror("Directorio no válido");
+    printf(" ");
+    return 0;
 }
 int getpwd(){
     char aux[60];
@@ -166,7 +200,7 @@ tPosL comando(char *str, tList L) {
     a--;
     for (p = L; p != NULL && i < a; p = p->next) {
         i++;
-    };
+    }
 
     if (a <= i) {
         printf("(*) %s\n", p->data);
@@ -219,7 +253,7 @@ void ayuda_salir(){
 
 
 void limpiar_string(char* string, int c){
-    for(int i = 0; i < c && string[i]!='/0'; i++){
+    for(int i = 0; i < c && string[i]!='\0'; i++){
         string[i] = '\0';
     }
 
@@ -259,17 +293,28 @@ char * ConvierteModo (mode_t m, char *permisos)
     return permisos;
 }
 
-int crear_x(tList L){
+int crear(tList *L){
+    tList p;
+    bool a;
+    if(strcmp((*L)->data,"-f")==0) 
+    	a=true;
+    for(p=(*L)->next; strcmp(p->data,FIN_COMM)!=0;p=p->next){
+        crear_x(p,a);
+    }
+    return 0;
+}
+
+int crear_x(tList L, bool a){
     FILE *fp;
-    if (strcmp(L->data,"-f")==0){
-        if((fp=fopen(L->next->data,"r"))!=NULL) {
+    if (a){
+        if((fp=fopen(L->data,"r"))!= NULL) {
             printf("Cannot create that file, already exists");
             fclose(fp);
         }
             //Posible perdida de puntero
         else{
             //fclose(fp);
-            if((fp=fopen(L->next->data,"w"))==NULL){
+            if((fp=fopen(L->data,"w"))==NULL){
                 printf("Cannot create that file");
             }
             else fclose(fp);
@@ -285,43 +330,8 @@ int crear_x(tList L){
     return 0;
 }
 
-
-void printFileProperties(struct stat stats, char comm[]){
-    struct tm dt;
-    if(strcmp(FIN_COMM,comm)==0){
-        printf("\nFile size: %ld", stats.st_size);
-        return;
-    }
-
-    if(strcmp(comm,"-acc")==0){
-        // File modification time
-        dt = *(gmtime(&stats.st_mtime));
-        printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
-               dt.tm_hour, dt.tm_min, dt.tm_sec);
-    }
-    // Get file creation time in seconds and
-    // convert seconds to date and time format
-    if(strcmp(comm,"-long")==0){
-        dt = *(gmtime(&stats.st_ctime));
-        printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
-               dt.tm_hour, dt.tm_min, dt.tm_sec);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        else if(strcmp(comm,"-link")==0){
+void sym_link (struct stat stats){
+    //else if(strcmp(comm,"-link")==0){
 
 //      Solucion copiada
 //        long symlink_max;
@@ -348,140 +358,229 @@ void printFileProperties(struct stat stats, char comm[]){
 //
 //        len = readlink("/usr/bin/perl", buf, bufsize);
 //        buf[len] = '\0';*/
-            char linkname[MAX_MID];
-            char cwd[MAX_MID];
+    char linkname[MAX_MID];
+    char cwd[MAX_MID];
 
 
-            if(getcwd(cwd,sizeof(cwd))!=NULL){
-                ssize_t r = readlink(cwd, linkname, MAX_MID);
+    if(getcwd(cwd,sizeof(cwd))!=NULL){
+        ssize_t r = readlink(cwd, linkname, MAX_MID);
 
-                if (r != -1) {
-                    linkname[r] = '\0';
-                    printf(" -> %s\n", linkname);
-                }
-                else
-                    putchar('\n');
-            }
+        if (r != -1) {
+            linkname[r] = '\0';
+            printf(" -> %s\t", linkname);
+        }
+        else
+            printf("none\t");
+    }
+
+}
+
+void printFileProperties(struct stat stats, tList *temp,char* name, char *carpeta){
+    struct tm dt;
+    /*if(strcmp(FIN_COMM,comm)==0){
+        printf("\nFile size: %ld", stats.st_size);
+        return;
+    }*/
+    if(findItem(FIN_COMM,*temp)==NULL/*|| findItem("-long",temp)==NULL && findItem("-link",temp)!=NULL*/){
+        if(findItem("-acc",*temp)!=NULL){
+            // File modification time
+            dt = *(gmtime(&stats.st_mtime));
+            printf("\nModified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+                   dt.tm_hour, dt.tm_min, dt.tm_sec);
+        } else{
+            dt = *(gmtime(&stats.st_ctime));
+            printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900,
+                   dt.tm_hour, dt.tm_min, dt.tm_sec);
 
         }
+        // Get file creation time in seconds and
+        // convert seconds to date and time format
+        if(findItem("-long",*temp)){
 
+            printf("%lu\t%ld\t",stats.st_nlink,stats.st_ino);
 
+            if (stats.st_mode &  S_IRUSR)
+                printf("r ");
+            if (stats.st_mode & S_IWUSR)
+                printf("w ");
+            if (stats.st_mode & S_IXUSR)
+                printf("x");
+            printf("\t");
 
-
-
-        printf("\nFile access: ");
-        if (stats.st_mode & R_OK)
-            printf("read ");
-        if (stats.st_mode & W_OK)
-            printf("write ");
-        if (stats.st_mode & X_OK)
-            printf("execute");
-
-        // File size
-        printf("\nFile size: %ld", stats.st_size);
+        }
+        if(findItem("-link",*temp)!=NULL) sym_link(stats);
 
     }
 
 
-int list_fich(tList L){
+    // File size
+    printf("%ld\t", stats.st_size);
+    printf("%s\t",name);
+    printf("\n");
+}
+
+void get_parameters(tList *L, tList M){
     tPosL p;
-    char aux[MAX_AUX_COMM]=FIN_COMM;
+    for(p=M;p!=NULL && p->data[0]=='-';p=p->next){
+        insertItem(p->data,L);
+    }
+}
+
+void an_list(tList* L,tList *temp,void (*function)(struct stat stats, tList *temp, char* name, char *carpeta)) {
+    tList p;
     struct stat structstat;
-    //check optional parameters for the function
+    get_parameters(temp, *L);
+    if (isEmptyList(*temp)) p = *L;
+    else p = findItem(last(*temp)->data, *L)->next;
+    for (; p != NULL && strcmp(p->data, FIN_COMM) != 0; p = p->next) {
+        if (stat(p->data, &structstat) == 0) {
+            (*function)(structstat, temp, p->data, p->data);
+        }
+    }
+    deleteList(temp);
+}
+
+
+int list_fich(tList L, tList *temp){
     if(strcmp(L->data,FIN_COMM)==0) {
-        carpeta(L->data);
+        getpwd();
         return 0;
     }
+    createEmptyList(temp);
+    an_list(&L,temp,&printFileProperties);
+    deleteList(temp);
+    return 0;
+}
 
-    if(L->data[0]=='-')strcpy(aux,L->data);
-
-    if(L->next->data[0]=='-') return 0;
-
-
-
-    for ( p=L;  p!=NULL && strcmp(p->data,FIN_COMM)!=0 ; p=p->next ) {
-        if(access(p->data, F_OK) == 0) {
-            if(stat(p->data, &structstat)){
-                printf("%s",p->data);
-                printFileProperties(structstat,aux);
-            }
-        } else {
-            // file doesn't exist
-            // Q_P What we do if wrong option?
-        }
-        printf("\n");
+int list_dir_up(tList L, tList *temp){
+    if(strcmp(L->data,FIN_COMM)==0)
+        carpeta(FIN_COMM);
+    else{
+        createEmptyList(temp);
+        an_list(&L, temp, &list_dir_bottom);
+        deleteList(temp);
     }
-    return 0;    
+    return 0;
+}
+
+void list_dir_bottom(struct stat structstat, tList *temp,char* name, char* carpeta){
+    struct dirent *de;
+    DIR *dr = NULL;
+    bool a=(S_ISDIR(structstat.st_mode)), b=(strcmp(name,".")!=0 && strcmp(name,"..")!=0);
+    struct stat sub_structstat;
+
+    //cambia el directorio actual para poder acceder a los archivos
+    /*if(strcmp(getcwd(name,MAXTAML),carpeta)!=0){
+        if(chdir(carpeta)!=0) {
+            strcat(carpeta,"/");
+            return;
+        }
+    }*/
+    //Si no es un directorio, imprime la información del archivo
+    if(!a&&b) printFileProperties(structstat,temp, name, name) ;
+        //si es un directorio lo abre y recorre
+    else if (a&&b){
+        if ((dr = opendir(name)) == NULL) {
+            perror(name);
+            return;
+        }
+        while ((de=readdir(dr))!=NULL){
+
+            if((a=(strcmp(de->d_name,".")!=0 && strcmp(de->d_name,"..")!=0)) && (b=stat(de->d_name,&sub_structstat)==0)){
+                //problema aquí
+                if(S_ISDIR(sub_structstat.st_mode))
+                    list_dir_bottom(sub_structstat,temp,de->d_name, carpeta/*strcat(carpeta,de->d_name)*/);
+                //else printFileProperties(sub_structstat,temp,)
+            }
+            else if(!a);
+            else  perror(de->d_name);
+
+        }
+        closedir(dr);
+
+    }
+
+
+
+
 }
 
 void leeCarpeta(char *str){
-	DIR *dirp;
-	struct dirent *e;
-	errno = 0;
-	if ((dirp = opendir(str)) == NULL) {
-			perror(str);
-			return;
-	}
-	while((e = readdir(dirp)) != NULL){
-		if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
-			//función
-		}
-	}
+    DIR *dirp;
+    struct dirent *e;
+    errno = 0;
+    if ((dirp = opendir(str)) == NULL) {
+        perror(str);
+        return;
+    }
+    while((e = readdir(dirp)) != NULL){
+        if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
+            //función
+        }
+    }
 }
+
 
 
 int borrar(tList L){
-	if(strcmp(L->data,FIN_COMM)==0){
-		getpwd();
-		return 0;
-	}else{
-		for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
-			if(remove(p->data) != 0){
-				perror(p->data);
-			}
-		}
-		return 0;
-	}
+    if(strcmp(L->data,FIN_COMM)==0){
+        getpwd();
+        return 0;
+    }else{
+        for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
+            if(remove(p->data) != 0){
+                perror(p->data);
+                printf("\n");
+            }
+        }
+        return 0;
+    }
 }
-
 void rec(char *str){
-	struct stat structstat;
-	if(stat(str, &structstat) != 0)
-		rec(str);
-	if(LetraTF(structstat.st_mode) != 'd'){
+	char source[MAX_COMM];
+	getcwd(source, MAX_COMM);
+    struct stat structstat;
+    if(stat(str, &structstat) != 0)
+        perror(str);
+    /*if(LetraTF(structstat.st_mode) != 'd'){
+        if(remove(str) != 0)
+            perror(str);
+        return;
+    }*/
+    DIR *dirp;
+    struct dirent *e;
+    errno = 0;
+    if ((dirp = opendir(str)) == NULL)
+        perror(str);
+    else{
+    	chdir(str);
+		while((e = readdir(dirp)) != NULL){
+		    if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
+		        if(remove(e->d_name) != 0)
+					rec(e->d_name);
+				else
+					perror(e->d_name);
+		    }
+		}
+		chdir(source);
 		if(remove(str) != 0)
 			perror(str);
-			return;
-	}
-	DIR *dirp;
-	struct dirent *e;
-	errno = 0;
-	if ((dirp = opendir(str)) == NULL) {
-		perror(str);
-		return;
-	}
-	while((e = readdir(dirp)) != NULL){
-		if((strcmp(e->d_name, ".") * strcmp(e->d_name, "..")) != 0){
-		printf("I");
-			if(remove(e->d_name) != 0)
-				rec(e->d_name);
-		}
 	}
 }
 
 int borrarrec(tList L){
-	if(strcmp(L->data,FIN_COMM)==0){
-		getpwd();
-		return 0;
-	}else{
-		for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
-				if(remove(p->data) != 0){
-					if(errno == 39)
-						rec(p->data);
-					else
-						perror(p->data);
-				}
-			}
-		}
-	return 0;
+    if(strcmp(L->data,FIN_COMM)==0){
+        getpwd();
+        return 0;
+    }else{
+        for(tPosL p = L; strcmp(p->data, FIN_COMM)!=0; p = p->next){
+            if(remove(p->data) != 0){
+                if(errno == 39)
+                    rec(p->data);
+                else
+                    perror(p->data);
+            }
+        }
+    }
+    return 0;
 }
